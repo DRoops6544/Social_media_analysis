@@ -527,4 +527,48 @@ ORDER BY engagement_segment, engagement DESC;
 
 
 
+--8.	How can you use user activity data to identify potential brand ambassadors or advocates 
+--      who could help promote Instagram's initiatives or events?
 
+
+WITH followers AS(
+	SELECT u.id user_id,
+	username,
+	COUNT(follower_id) AS follower_count
+	FROM users u 
+	LEFT JOIN follows f ON u.id=f.followee_id
+	GROUP BY 1,2
+),
+
+-- ENGAGEMENT OF EACH USER 
+engagement AS(
+	SELECT u.id AS user_id,
+	username,
+	p.id AS photo_id,
+	COUNT(DISTINCT c.user_id) comments,
+	COUNT(DISTINCT l.user_id) likes 
+	FROM users u 
+	LEFT JOIN photos p ON u.id=p.user_id
+	LEFT JOIN comments c ON c.photo_id=p.id
+	LEFT JOIN likes l ON l.photo_id=p.id
+	GROUP BY 1,2,3
+)
+
+-- potential brand ambassadors  
+SELECT f.user_id,
+f.username,
+follower_count,
+SUM(comments) + SUM(likes) total_likes
+FROM followers f 
+JOIN engagement e ON f.user_id=e.user_id
+WHERE follower_count = (SELECT MAX(follower_count) FROM followers)
+GROUP BY 1,2,3 
+ORDER BY 4 DESC LIMIT 4;
+
+ --10.	Assuming there's a "User_Interactions" table tracking user engagements, 
+-- how can you update the "Engagement_Type" column to change all instances of "Like" to "Heart" to align with Instagram's terminology?
+
+
+UPDATE User_Interactions
+SET Engagement_Type = 'Heart'
+WHERE Engagement_Type = 'Like';
